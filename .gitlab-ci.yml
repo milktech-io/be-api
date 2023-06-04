@@ -1,0 +1,46 @@
+variables:
+  APP_NAME: users-administration
+  SYSTEM: eon
+
+include:
+  - remote: https://templates-gitlab-ci.s3.amazonaws.com/.prepare-environment.yml
+  - remote: https://templates-gitlab-ci.s3.amazonaws.com/.sonarqube.yml
+  - remote: https://templates-gitlab-ci.s3.amazonaws.com/.build-php.yml
+  - remote: https://templates-gitlab-ci.s3.amazonaws.com/.deploy-php.yml
+  - remote: https://templates-gitlab-ci.s3.amazonaws.com/.cleanup.yml
+
+stages:
+  - prepare
+  - sonarqube
+  - build
+  - deploy
+  - cleanup
+
+prepare:
+  stage: prepare
+  image: bitnami/git
+  extends: .PrepareEnvs
+
+code_review:
+  stage: sonarqube
+  extends: .SonarQube
+
+building:
+  stage: build
+  dependencies:
+    - prepare
+  extends: .Building
+  environment:
+    name: $CI_COMMIT_BRANCH
+
+deployment:
+  stage: deploy
+  dependencies:
+    - building
+  extends: .Deployment
+  environment:
+    name: $CI_COMMIT_BRANCH
+
+cleanup:
+  stage: cleanup
+  extends: .CleanUp
